@@ -15,7 +15,428 @@
         .snowflake {
             color: rgba(255, 255, 255, 0.8);
             position: fixed;
+            top: -10px;<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemeinsames Weihnachts-Wichteln</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+        .snowflake {
+            color: rgba(255, 255, 255, 0.8);
+            position: fixed;
             top: -10px;
+            animation: fall linear infinite;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        @keyframes fall {
+            0% { transform: translateY(-10px) translateX(0); opacity: 1; }
+            100% { transform: translateY(105vh) translateX(20px); opacity: 0.2; }
+        }
+    </style>
+</head>
+<body class="bg-emerald-950 text-slate-100 min-h-screen flex flex-col justify-between relative overflow-x-hidden">
+
+    <!-- Schneefall Hintergrund -->
+    <div id="snow-container"></div>
+
+    <!-- Header -->
+    <header class="bg-red-900/80 backdrop-blur-md border-b border-red-700/50 p-4 sticky top-0 z-50 shadow-lg">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="gift" class="w-8 h-8 text-amber-400"></i>
+                <h1 class="text-xl font-bold tracking-wide text-amber-100">Weihnachts-Wichteln 2026</h1>
+            </div>
+            <div id="user-badge" class="hidden flex items-center space-x-3 bg-red-950/60 px-3 py-1.5 rounded-full border border-red-700">
+                <span class="text-sm font-medium text-amber-200" id="current-user-name"></span>
+                <button onclick="logout()" class="text-xs text-red-300 hover:text-white underline cursor-pointer">Wechseln</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-3xl w-full mx-auto p-4 sm:p-6 my-auto flex-grow z-10">
+        
+        <!-- Ansicht 1: Login / Name wählen -->
+        <div id="view-login" class="bg-red-900/40 backdrop-blur-md border border-red-700/40 rounded-2xl p-6 sm:p-8 shadow-2xl text-center">
+            <div class="inline-block p-4 bg-red-800/60 rounded-full mb-4 text-amber-300 shadow-inner">
+                <i data-lucide="user-check" class="w-12 h-12"></i>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-2 text-amber-100">Wer bist du?</h2>
+            <p class="text-red-200 mb-6 text-sm sm:text-base">Wähle deinen Namen aus, um deine Wichtel-Runde zu starten und Geschenke zu organisieren.</p>
+            
+            <div class="max-w-xs mx-auto space-y-4">
+                <select id="user-select" class="w-full bg-red-950 border border-red-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400">
+                    <-- Wird dynamisch gefüllt -->
+                </select>
+                <button onclick="login()" class="w-full bg-amber-500 hover:bg-amber-400 text-red-950 font-bold py-3 px-6 rounded-xl shadow-lg transition duration-200 cursor-pointer flex items-center justify-center space-x-2">
+                    <span>Reinkommen</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="mt-8 border-t border-red-800/50 pt-4">
+                <p class="text-xs text-red-300 mb-2">Dein Name fehlt in der Liste?</p>
+                <div class="flex gap-2 max-w-xs mx-auto">
+                    <input type="text" id="new-participant-input" placeholder="Neuer Name..." class="flex-grow bg-red-950/80 border border-red-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-400">
+                    <button onclick="addParticipant()" class="bg-red-800 hover:bg-red-700 text-amber-200 px-3 py-2 rounded-lg text-sm font-medium transition cursor-pointer">Hinzufügen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ansicht 2: Gruppen-Übersicht -->
+        <div id="view-dashboard" class="hidden space-y-6">
+            <div class="bg-red-900/40 backdrop-blur-md border border-red-700/40 rounded-2xl p-6 shadow-xl text-center">
+                <h2 class="text-2xl font-bold text-amber-100 mb-2">Hallo, <span id="welcome-name" class="text-amber-300"></span>! 👋</h2>
+                <p class="text-red-200 text-sm">Hier siehst du alle Gruppen für deine Freunde. Für dich selbst (dein eigenes Geschenk) ist der Bereich natürlich gesperrt, damit es eine Überraschung bleibt!</p>
+            </div>
+
+            <h3 class="text-lg font-semibold text-amber-200 flex items-center space-x-2">
+                <i data-lucide="users" class="w-5 h-5 text-amber-400"></i>
+                <span>Gruppen-Geschenke für...</span>
+            </h3>
+
+            <div id="groups-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Dynamische Gruppenkarten -->
+            </div>
+        </div>
+
+        <!-- Ansicht 3: Detail-Ansicht einer Gruppe (Geschenke & Vorschläge) -->
+        <div id="view-group-detail" class="hidden space-y-6">
+            <button onclick="backToDashboard()" class="inline-flex items-center space-x-2 text-amber-300 hover:text-amber-200 bg-red-900/60 px-4 py-2 rounded-xl border border-red-700/60 text-sm transition cursor-pointer">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Zurück zur Übersicht</span>
+            </button>
+
+            <div class="bg-red-900/50 backdrop-blur-md border border-red-700/50 rounded-2xl p-6 shadow-xl flex items-center justify-between">
+                <div>
+                    <span class="text-xs uppercase tracking-wider text-amber-400 font-bold">Gemeinsames Geschenk für</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white" id="detail-target-name"></h2>
+                </div>
+                <div class="bg-amber-500/20 border border-amber-500/40 p-3 rounded-xl text-amber-300">
+                    <i data-lucide="gift" class="w-8 h-8"></i>
+                </div>
+            </div>
+
+            <!-- Vorschlag hinzufügen Formular -->
+            <div class="bg-red-900/30 backdrop-blur-md border border-red-700/40 rounded-2xl p-5 shadow-lg">
+                <h4 class="text-sm font-semibold text-amber-200 uppercase tracking-wide mb-3 flex items-center space-x-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>Neuen Vorschlag einreichen</span>
+                </h4>
+                <div class="space-y-3">
+                    <input type="text" id="suggestion-title" placeholder="Geschenk-Idee (z.B. Gutschein, Buch...)" class="w-full bg-red-950 border border-red-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-400">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input type="text" id="suggestion-price" placeholder="Geschätzter Preis (z.B. 25€)" class="bg-red-950 border border-red-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-400">
+                        <input type="url" id="suggestion-link" placeholder="Link (optional, z.B. Amazon...)" class="bg-red-950 border border-red-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-400">
+                    </div>
+                    <textarea id="suggestion-desc" placeholder="Kurze Beschreibung / Notiz dazu..." rows="2" class="w-full bg-red-950 border border-red-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-400"></textarea>
+                    <button onclick="addSuggestion()" class="w-full bg-amber-500 hover:bg-amber-400 text-red-950 font-bold py-2.5 px-4 rounded-xl text-sm shadow transition duration-200 cursor-pointer">Vorschlag abschicken</button>
+                </div>
+            </div>
+
+            <!-- Liste der Vorschläge -->
+            <div class="space-y-4">
+                <h4 class="text-lg font-semibold text-amber-200">Vorschläge & Abstimmungen</h4>
+                <div id="suggestions-list" class="space-y-3">
+                    <!-- Dynamische Vorschläge -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-6 text-xs text-red-300/80 z-10">
+        Weihnachts-Wichteln • Erstellt für deine Freunde (Android & iOS kompatibel) 🎄
+    </footer>
+
+    <!-- Firebase SDK & App Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // ==========================================
+        // 🔑 FIREBASE CONFIGURATION (Hier deine Firebase Daten eintragen)
+        // ==========================================
+       const firebaseConfig = {
+        apiKey: "AIzaSyBXKcoERHfzYK9VxEAcuMtNfobD3d3l3PY",
+        authDomain: "wichteln-e545e.firebaseapp.com",
+        projectId: "wichteln-e545e",
+        storageBucket: "wichteln-e545e.firebasestorage.app",
+        messagingSenderId: "954927758301",
+        appId: "1:954927758301:web:cf4de16e8984b3649dd434",
+        measurementId: "G-XL86BKCHWV"
+        };
+
+        // Fallback zu localStorage falls kein Firebase konfiguriert ist, 
+        // damit es lokal in VS Code sofort getestet werden kann!
+        const useFirebase = firebaseConfig.apiKey !== "AIzaSyBXKcoERHfzYK9VxEAcuMtNfobD3d3l3PY";
+        let db = null;
+
+        if (useFirebase) {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+        }
+
+        // Schneefall erzeugen
+        const snowContainer = document.getElementById('snow-container');
+        for (let i = 0; i < 40; i++) {
+            const snowflake = document.createElement('div');
+            snowflake.classList.add('snowflake');
+            snowflake.innerHTML = '❄';
+            snowflake.style.left = Math.random() * 100 + 'vw';
+            snowflake.style.animationDuration = (Math.random() * 5 + 5) + 's';
+            snowflake.style.animationDelay = (Math.random() * 5) + 's';
+            snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+            snowContainer.appendChild(snowflake);
+        }
+
+        // State
+        let currentUser = localStorage.getItem('wichtel_user') || null;
+        let currentGroupTarget = null;
+        let participants = ["Anna", "Ben", "Clara", "David", "Elena"];
+        let suggestionsData = [];
+
+        window.onload = async () => {
+            lucide.createIcons();
+            await loadData();
+            if (currentUser) {
+                showDashboard();
+            } else {
+                showLogin();
+            }
+        };
+
+        async function loadData() {
+            if (useFirebase) {
+                // Lade Teilnehmer & Vorschläge aus Firestore
+                // (Einfaches Setup für Demo)
+            } else {
+                // Lokaler Speicher Fallback für den Schnellstart
+                const savedParticipants = localStorage.getItem('wichtel_participants');
+                if (savedParticipants) participants = JSON.parse(savedParticipants);
+
+                const savedSuggestions = localStorage.getItem('wichtel_suggestions');
+                if (savedSuggestions) suggestionsData = JSON.parse(savedSuggestions);
+            }
+            updateUserSelect();
+        }
+
+        async function saveData() {
+            if (!useFirebase) {
+                localStorage.setItem('wichtel_participants', JSON.stringify(participants));
+                localStorage.setItem('wichtel_suggestions', JSON.stringify(suggestionsData));
+            }
+        }
+
+        window.addUser = async function() {
+            const input = document.getElementById('new-participant-input');
+            const name = input.value.trim();
+            if (name && !participants.includes(name)) {
+                participants.push(name);
+                input.value = '';
+                await saveData();
+                updateUserSelect();
+                alert(`"${name}" wurde zur Runde hinzugefügt!`);
+            }
+        }
+
+        function updateUserSelect() {
+            const select = document.getElementById('user-select');
+            select.innerHTML = participants.map(p => `<option value="${p}">${p}</option>`).join('');
+        }
+
+        window.login = function() {
+            const select = document.getElementById('user-select');
+            currentUser = select.value;
+            localStorage.setItem('wichtel_user', currentUser);
+            showDashboard();
+        }
+
+        window.logout = function() {
+            localStorage.removeItem('wichtel_user');
+            currentUser = null;
+            showLogin();
+        }
+
+        function showLogin() {
+            document.getElementById('view-login').classList.remove('hidden');
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-group-detail').classList.add('hidden');
+            document.getElementById('user-badge').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('view-login').classList.add('hidden');
+            document.getElementById('view-dashboard').classList.remove('hidden');
+            document.getElementById('view-group-detail').classList.add('hidden');
+            
+            document.getElementById('user-badge').classList.remove('hidden');
+            document.getElementById('current-user-name').innerText = currentUser;
+            document.getElementById('welcome-name').innerText = currentUser;
+
+            renderGroups();
+        }
+
+        function renderGroups() {
+            const grid = document.getElementById('groups-grid');
+            // Alle Personen außer dem angemeldeten Benutzer bekommen eine eigene Gruppe
+            const otherParticipants = participants.filter(p => p !== currentUser);
+
+            if (otherParticipants.length === 0) {
+                grid.innerHTML = `<p class="col-span-2 text-center text-red-200 py-4">Es sind noch keine weiteren Teilnehmer in der Runde.</p>`;
+                return;
+            }
+
+            grid.innerHTML = otherParticipants.map(person => {
+                const count = suggestionsData.filter(s => s.target === person).length;
+                return `
+                    <div onclick="openGroup('${person}')" class="bg-red-900/40 hover:bg-red-900/70 border border-red-700/50 rounded-2xl p-5 shadow-lg transition transform hover:-translate-y-1 cursor-pointer flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center text-amber-300 font-bold text-xl">
+                                ${person.charAt(0)}
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-bold text-white">Geschenk für ${person}</h4>
+                                <p class="text-xs text-red-200">${count} Vorschlag${count === 1 ? '' : 'e'}</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-amber-400"></i>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        window.openGroup = function(person) {
+            currentGroupTarget = person;
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-group-detail').classList.remove('hidden');
+            document.getElementById('detail-target-name').innerText = person;
+            renderSuggestions();
+        }
+
+        window.backToDashboard = function() {
+            currentGroupTarget = null;
+            showDashboard();
+        }
+
+        window.addSuggestion = async function() {
+            const title = document.getElementById('suggestion-title').value.trim();
+            const price = document.getElementById('suggestion-price').value.trim();
+            const link = document.getElementById('suggestion-link').value.trim();
+            const desc = document.getElementById('suggestion-desc').value.trim();
+
+            if (!title) {
+                alert("Bitte gib mindestens einen Titel für den Vorschlag ein.");
+                return;
+            }
+
+            const newSuggestion = {
+                id: Date.now().toString(),
+                target: currentGroupTarget,
+                author: currentUser,
+                title,
+                price,
+                link,
+                desc,
+                votes: []
+            };
+
+            suggestionsData.push(newSuggestion);
+            await saveData();
+
+            // Formular leeren
+            document.getElementById('suggestion-title').value = '';
+            document.getElementById('suggestion-price').value = '';
+            document.getElementById('suggestion-link').value = '';
+            document.getElementById('suggestion-desc').value = '';
+
+            renderSuggestions();
+        }
+
+        window.toggleVote = async function(id) {
+            const suggestion = suggestionsData.find(s => s.id === id);
+            if (!suggestion) return;
+
+            if (!suggestion.votes) suggestion.votes = [];
+            const index = suggestion.votes.indexOf(currentUser);
+
+            if (index > -1) {
+                suggestion.votes.splice(index, 1);
+            } else {
+                suggestion.votes.push(currentUser);
+            }
+
+            await saveData();
+            renderSuggestions();
+        }
+
+        window.deleteSuggestion = async function(id) {
+            if (confirm("Möchtest du diesen Vorschlag wirklich löschen?")) {
+                suggestionsData = suggestionsData.get ? suggestionsData : suggestionsData.filter(s => s.id !== id);
+                await saveData();
+                renderSuggestions();
+            }
+        }
+
+        function renderSuggestions() {
+            const list = document.getElementById('suggestions-list');
+            const groupSuggestions = suggestionsData.filter(s => s.target === currentGroupTarget);
+
+            if (groupSuggestions.length === 0) {
+                list.innerHTML = `<div class="bg-red-900/20 border border-red-800/40 rounded-2xl p-8 text-center text-red-200">Noch keine Vorschläge für ${currentGroupTarget} vorhanden. Sei der Erste! 🎁</div>`;
+                return;
+            }
+
+            list.innerHTML = groupSuggestions.map(s => {
+                const hasVoted = s.votes && s.votes.includes(currentUser);
+                const voteCount = s.votes ? s.votes.length : 0;
+                const isAuthor = s.author === currentUser;
+
+                return `
+                    <div class="bg-red-900/40 border border-red-700/50 rounded-2xl p-5 shadow-lg space-y-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h5 class="text-lg font-bold text-amber-100">${s.title}</h5>
+                                <div class="flex items-center space-x-3 text-xs text-red-200 mt-1">
+                                    <span>Vorschlag von: <strong>${s.author}</strong></span>
+                                    ${s.price ? `<span>• 💰 ${s.price}</span>` : ''}
+                                </div>
+                            </div>
+                            ${isAuthor ? `<button onclick="deleteSuggestion('${s.id}')" class="text-red-400 hover:text-red-200 text-xs cursor-pointer">Löschen</button>` : ''}
+                        </div>
+
+                        ${s.desc ? `<p class="text-sm text-slate-200 bg-red-950/40 p-3 rounded-xl border border-red-800/30">${s.desc}</p>` : ''}
+
+                        ${s.link ? `<a href="${s.link}" target="_blank" class="inline-flex items-center space-x-1 text-xs text-amber-300 hover:underline"><span>🔗 Link zum Produkt öffnen</span></a>` : ''}
+
+                        <div class="flex justify-between items-center pt-2 border-t border-red-800/40">
+                            <button onclick="toggleVote('${s.id}')" class="inline-flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition cursor-pointer ${hasVoted ? 'bg-amber-500 text-red-950 font-bold shadow' : 'bg-red-950/80 hover:bg-red-800 text-amber-200 border border-red-700'}">
+                                <i data-lucide="thumbs-up" class="w-4 h-4"></i>
+                                <span>${hasVoted ? 'Stimme zurückziehen' : 'Dafür stimmen'}</span>
+                            </button>
+                            <span class="text-xs text-amber-200 bg-red-950/60 px-3 py-1.5 rounded-full border border-red-800">
+                                👍 <strong>${voteCount}</strong> Stimme${voteCount === 1 ? '' : 'n'} (${s.votes ? s.votes.join(', ') : ''})
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
             animation: fall linear infinite;
             pointer-events: none;
             z-index: 1000;
